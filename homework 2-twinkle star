@@ -1,0 +1,54 @@
+ //twinkle star程序源码
+
+int numStars = 100; // 星星的数量
+Star[] stars = new Star[numStars]; // 星星数组
+
+void setup() {
+  size(800, 600); // 画布大小
+  for (int i = 0; i < numStars; i++) {
+    stars[i] = new Star(random(width), random(height), random(1, 5));
+  }
+}
+
+void draw() {
+  background(0); // 背景色
+  for (int i = 0; i < numStars; i++) {
+    stars[i].display();
+    stars[i].twinkle();
+  }
+  saveFrame("frames/####.png"); // 保存每一帧为图像
+}
+
+
+class Star {
+  float x;
+  float y;
+  float size;
+  float twinkleSpeed;
+  float maxBrightness;
+  float brightness;
+
+  Star(float x, float y, float size) {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.twinkleSpeed = random(3, 6); // 增加闪烁速度
+    this.maxBrightness = random(255, 255); // 最大亮度
+    this.brightness = random(this.maxBrightness);
+  }
+
+  void display() {
+    fill(this.brightness);
+    noStroke();
+    ellipse(this.x, this.y, this.size, this.size);
+  }
+
+  void twinkle() {
+    this.brightness += this.twinkleSpeed;
+    if (this.brightness <= 0 || this.brightness >= this.maxBrightness) {
+      this.twinkleSpeed *= -1;
+    }
+  }
+}
+
+
