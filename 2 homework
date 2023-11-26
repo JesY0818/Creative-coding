@@ -1,0 +1,90 @@
+// 定义颜色数组
+color[] colors = {#000000, #FF0000, #0000FF, #F0F0C0};
+
+// 定义矩形类
+class Rect {
+  float x, y, w, h; // 矩形的位置和大小
+  color c; // 矩形的颜色
+  boolean split; // 矩形是否被分割
+  
+  // 构造函数
+  Rect(float x, float y, float w, float h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.c = colors[int(random(colors.length))]; // 随机选择一个颜色
+    this.split = false; // 初始时没有被分割
+  }
+  
+  // 显示矩形
+  void show() {
+    strokeWeight(10); // 设置线条的宽度为10
+    stroke(0); // 设置线条的颜色为黑色
+    fill(c);
+    rect(x, y, w, h);
+  }
+  
+  // 分割矩形
+  void divide(ArrayList<Rect> rects) {
+    // 如果矩形太小，就不分割
+    if (w < 50 || h < 50) {
+      return;
+    }
+    // 随机选择一个方向，水平或垂直
+    boolean horizontal = random(1) < 0.5;
+    // 随机选择一个分割点
+    float splitPoint = random(0.3, 0.7);
+    // 根据方向和分割点，创建两个新的矩形
+    if (horizontal) {
+      Rect r1 = new Rect(x, y, w, h * splitPoint);
+      Rect r2 = new Rect(x, y + h * splitPoint, w, h * (1 - splitPoint));
+      // 将新的矩形添加到数组中
+      rects.add(r1);
+      rects.add(r2);
+    } else {
+      Rect r1 = new Rect(x, y, w * splitPoint, h);
+      Rect r2 = new Rect(x + w * splitPoint, y, w * (1 - splitPoint), h);
+      // 将新的矩形添加到数组中
+      rects.add(r1);
+      rects.add(r2);
+    }
+    // 将原来的矩形从数组中移除
+    rects.remove(this);
+    // 标记矩形已经被分割
+    this.split = true;
+  }
+}
+
+// 定义一个矩形数组
+ArrayList<Rect> rects;
+
+void setup() {
+  size(600, 600); // 设置画布大小
+  rects = new ArrayList<Rect>(); // 初始化矩形数组
+  // 创建一个初始的矩形，占满整个画布
+  Rect r = new Rect(0, 0, width, height);
+  // 将初始的矩形添加到数组中
+  rects.add(r);
+}
+
+void draw() {
+  background(255); // 设置背景颜色为白色
+  // 遍历矩形数组
+  for (int i = 0; i < rects.size(); i++) {
+    // 获取当前的矩形
+    Rect r = rects.get(i);
+    // 以一定的概率分割矩形
+    if (!r.split && random(1) < 0.01) {
+      r.divide(rects);
+    }
+    // 显示矩形
+    r.show();
+  }
+  // 每隔一段时间，清空矩形数组，重新开始
+  if (frameCount % 300 == 0) {
+    rects.clear();
+    Rect r = new Rect(0, 0, width, height);
+    rects.add(r);
+  }
+}
