@@ -1,0 +1,40 @@
+// 定义参数
+float heightVar = 0.5; // 高度变量
+float widthVar = 0.5; // 宽度变量
+float colorVar = 255; // 色彩变量
+float rotateVar = 0; // 旋转变量
+int numVar = 5; // 数量变量
+
+// 定义数组
+float[] numArray = new float[numVar]; // 数量数组
+
+void setup() {
+  size(500, 500, P3D); // 创建三维空间
+  lights(); // 设置光源
+  for (int i = 0; i < numVar; i++) {
+    numArray[i] = random(0, 1); // 生成随机数
+  }
+}
+
+void draw() {
+  background(0); // 设置背景色
+  translate(width/2, height/2); // 移动坐标系原点
+  for (int i = 0; i < numVar; i++) {
+    pushMatrix(); // 保存变换矩阵
+    rotateY(radians(rotateVar + i * 360 / numVar)); // 旋转y轴
+    drawTriangle(heightVar * numArray[i], widthVar * numArray[i], colorVar * numArray[i]); // 绘制三角面片
+    popMatrix(); // 恢复变换矩阵
+  }
+}
+
+// 定义绘制三角面片的函数
+void drawTriangle(float h, float w, float c) {
+  beginShape(TRIANGLES); // 开始绘制三角形
+  fill(c, 0, 0); // 填充红色
+  vertex(-w/2, -h/2, 0); // 绘制第一个顶点
+  fill(0, c, 0); // 填充绿色
+  vertex(w/2, -h/2, 0); // 绘制第二个顶点
+  fill(0, 0, c); // 填充蓝色
+  vertex(0, h/2, 0); // 绘制第三个顶点
+  endShape(); // 结束绘制三角形
+}
