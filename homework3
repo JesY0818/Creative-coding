@@ -1,0 +1,14 @@
+PImage[] frames; //声明一个PImage数组
+void setup() {
+  size(800, 600); //设置窗口大小
+  frames = new PImage[6]; //初始化数组
+  for (int i = 0; i < 6; i++) {
+    frames[i] = loadImage("cat" + (i + 1) + ".png"); //加载图片
+  }
+}
+
+void draw() {
+  background(255); //设置背景颜色为白色
+  int index = frameCount % 6; //计算图片的索引，从0到5循环
+  image(frames[index], 0, 0); //显示图片，位置为左上角
+}
