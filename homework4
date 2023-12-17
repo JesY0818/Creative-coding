@@ -1,40 +1,109 @@
-// 定义参数
-float heightVar = 0.5; // 高度变量
-float widthVar = 0.5; // 宽度变量
-float colorVar = 255; // 色彩变量
-float rotateVar = 0; // 旋转变量
-int numVar = 5; // 数量变量
+import peasy.*;
+import controlP5.*;
+float dia = 50.0;
+float sw = 1;
 
-// 定义数组
-float[] numArray = new float[numVar]; // 数量数组
+PVector[][] vp;
+int layer = 20;
+int section = 72; // 增加每一层的三角形数量
+float radiu = 200;
+float cyHigth = 20;
 
-void setup() {
-  size(500, 500, P3D); // 创建三维空间
-  lights(); // 设置光源
-  for (int i = 0; i < numVar; i++) {
-    numArray[i] = random(0, 1); // 生成随机数
+PeasyCam cam;
+ControlP5 cp;
+
+void setup(){
+  size(800, 800, P3D);
+  background(0);
+  cam = new PeasyCam(this, 400);
+  UI();
+  smooth(); // 平滑图形的边缘
+  
+  //buildCylinder();
+}
+
+void draw(){
+  background(0);
+  //strokeWeight(sw);
+  //stroke(200,200,0);
+  //ellipse(0, 0, dia, dia);
+  buildCylinder();
+  
+  displayCylinder();
+  
+  cam.beginHUD();
+  cp.draw();
+  cam.endHUD();
+  
+  if (mouseX<300 && mouseY<300) {
+    cam.setActive(false);
+  } else {
+    cam.setActive(true);
   }
 }
 
-void draw() {
-  background(0); // 设置背景色
-  translate(width/2, height/2); // 移动坐标系原点
-  for (int i = 0; i < numVar; i++) {
-    pushMatrix(); // 保存变换矩阵
-    rotateY(radians(rotateVar + i * 360 / numVar)); // 旋转y轴
-    drawTriangle(heightVar * numArray[i], widthVar * numArray[i], colorVar * numArray[i]); // 绘制三角面片
-    popMatrix(); // 恢复变换矩阵
+void buildCylinder(){
+  vp = new PVector[layer][section];
+  float angle = TWO_PI/section;
+  
+  for(int i = 0; i < layer; i ++){
+    for(int j = 0; j < section; j ++){
+      radiu = 200 + 50 * sin(angle * i); // 改变每一层的半径
+      vp[i][j] = new PVector(radiu*cos(angle*j), radiu*sin(angle*j), cyHigth*i);
+    }
   }
 }
 
-// 定义绘制三角面片的函数
-void drawTriangle(float h, float w, float c) {
-  beginShape(TRIANGLES); // 开始绘制三角形
-  fill(c, 0, 0); // 填充红色
-  vertex(-w/2, -h/2, 0); // 绘制第一个顶点
-  fill(0, c, 0); // 填充绿色
-  vertex(w/2, -h/2, 0); // 绘制第二个顶点
-  fill(0, 0, c); // 填充蓝色
-  vertex(0, h/2, 0); // 绘制第三个顶点
-  endShape(); // 结束绘制三角形
+void displayCylinder(){
+  //fill(200);
+  strokeWeight(1);
+  stroke(255);
+  float c = 255/vp.length;
+  for(int i = 0; i < vp.length-1; i ++){
+    fill(i*c);
+    for(int j = 0; j < vp[0].length; j ++){
+      beginShape(TRIANGLES);
+      vertex(vp[i][j].x, 
+             vp[i][j].y, 
+             vp[i][j].z);
+      vertex(vp[i+1][j].x, 
+             vp[i+1][j].y, 
+             vp[i+1][j].z);
+      vertex(vp[i][(j+1)%vp[0].length].x, 
+             vp[i][(j+1)%vp[0].length].y, 
+             vp[i][(j+1)%vp[0].length].z);
+      
+      vertex(vp[i][(j+1)%vp[0].length].x, 
+             vp[i][(j+1)%vp[0].length].y, 
+             vp[i][(j+1)%vp[0].length].z);
+      vertex(vp[i+1][j].x, 
+             vp[i+1][j].y, 
+             vp[i+1][j].z);
+      vertex(vp[i+1][(j+1)%vp[0].length].x,
+             vp[i+1][(j+1)%vp[0].length].y, 
+             vp[i+1][(j+1)%vp[0].length].z);
+      endShape();
+    }
+  }
+  
+  for(int i = 0; i < vp.length; i ++){
+    for(int j = 0; j < vp[0].length; j ++){
+      strokeWeight(5);
+      stroke(255,0,255);
+      point(vp[i][j].x, vp[i][j].y, vp[i][j].z);
+    }
+  }
+}
+
+//UI
+void UI() {
+  cp = new ControlP5(this);
+  cp.addSlider("dia",0,200,50,50,50,100,30).setLabel("直径");
+  //范围 默认初始值  定位点xy坐标值 宽度 高度
+  cp.addSlider("sw",0,20,1,50,50+30+10,100,30).setLabel("轮廓");
+  cp.addSlider("radiu",50,500,200,50,50+60+20,200,30).setLabel("直径");
+  //范围 默认初始值  定位点xy坐标值 宽度 高度
+  cp.addSlider("section",3,128,36,50,50+90+30,200,30).setLabel("轮廓");
+  cp.addSlider("cyHigth",0,200,50,50,50+90+70,200,30).setLabel("轮廓");
+  cp.setAutoDraw(false);
 }
