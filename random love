@@ -1,0 +1,165 @@
+// 定义一个爱心类
+class Love {
+  // 爱心的位置
+  float x, y, z;
+  // 爱心的颜色
+  color c;
+  // 爱心的大小
+  float size;
+  // 爱心的旋转角度
+  float angle;
+  // 爱心的旋转速度
+  float speed;
+  // 爱心的分形层数
+  int level;
+  // 爱心的分形比例
+  float ratio;
+  // 爱心的构造函数，初始化各个属性
+  Love(float x, float y, float z, color c, float size, float angle, float speed, int level, float ratio) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.c = c;
+    this.size = size;
+    this.angle = angle;
+    this.speed = speed;
+    this.level = level;
+    this.ratio = ratio;
+  }
+  // 爱心的绘制函数，使用分形递归的方法
+  void drawLove() {
+    // 如果分形层数为0，就停止递归
+    if (level == 0) {
+      return;
+    }
+    // 保存当前的状态
+    pushMatrix();
+    // 将爱心移动到指定的位置
+    translate(x, y, z);
+    // 将爱心旋转指定的角度
+    rotateY(radians(angle));
+    // 填充爱心的颜色
+    fill(c);
+    // 关闭描边
+    noStroke();
+    // 使用正交投影
+    ortho();
+    // 使用两层循环绘制爱心的每个方块
+    for (int j = 0; j < 6; j++) {
+      for (int i = 0; i < 7; i++) {
+        // 保存当前的状态
+        pushMatrix();
+        // 将方块移动到相应的位置
+        translate(size * i, size * j, 0);
+        // 根据爱心的形状，判断是否需要绘制方块
+        if ((j == 0 && (i == 0 || i == 3 || i == 6)) || (j == 3 && (i == 0 || i == 6)) || (j == 4 && (i != 2 && i != 3 && i != 4)) || (j == 5 && (i != 3))) {
+          // 不绘制方块
+        } else {
+          // 绘制方块
+          box(size);
+        }
+        // 还原当前的状态
+        popMatrix();
+      }
+    }
+    // 还原当前的状态
+    popMatrix();
+    // 在爱心的四个角落绘制更小的爱心，形成分形效果
+    drawSmallLove(-size, -size, 0, -speed); // 左上角
+    drawSmallLove(size * 7, -size, 0, speed); // 右上角
+    drawSmallLove(-size, size * 6, 0, speed); // 左下角
+    drawSmallLove(size * 7, size * 6, 0, -speed); // 右下角
+  }
+  // 绘制小爱心的函数，传入相对位置和旋转速度
+  void drawSmallLove(float dx, float dy, float dz, float ds) {
+    // 创建一个新的爱心对象，属性为当前爱心的一定比例
+    Love smallLove = new Love(x + dx, y + dy, z + dz, c, size * ratio, angle, speed + ds, level - 1, ratio);
+    // 调用小爱心的绘制函数
+    smallLove.drawLove();
+  }
+  // 爱心的更新函数，改变爱心的旋转角度
+  void updateLove() {
+    // 旋转角度增加旋转速度
+    angle += speed;
+    // 如果旋转角度超过360度，就取余数
+    angle %= 360;
+  }
+}
+
+// 定义一个全局的爱心数组，存放所有的爱心对象
+Love[] loves;
+// 定义一个全局的爱心数量，可以根据需要修改
+int loveNum = 16;
+
+void setup() {
+  // 设置窗口的大小和渲染模式
+  size(800, 800, P3D);
+  // 初始化爱心数组
+  loves = new Love[loveNum];
+  // 使用循环创建每个爱心对象，随机生成一些属性
+  for (int i = 0; i < loveNum; i++) {
+    // 随机生成爱心的位置，颜色，大小，角度，速度，层数，比例等
+    float x = random(-width / 2, width / 2);
+    float y = random(-height / 2, height / 2);
+    float z = random(-500, 500);
+    color c = color(random(255), random(255), random(255));
+    float size = random(5, 20);
+    float angle = random(360);
+    float speed = random(0.5, 2);
+    int level = int(random(1, 4));
+    float ratio = random(0.2, 0.5);
+    // 创建爱心对象，传入相应的属性
+    loves[i] = new Love(x, y, z, c, size, angle, speed, level, ratio);
+  }
+}
+
+void draw() {
+  // 设置背景颜色为白色
+  background(255);
+  // 将坐标原点移动到窗口中心
+  translate(width / 2, height / 2);
+  // 使用循环绘制和更新每个爱心对象
+  for (int i = 0; i < loveNum; i++) {
+    // 调用爱心的绘制函数
+    loves[i].drawLove();
+    // 调用爱心的更新函数
+    loves[i].updateLove();
+  }
+}
+
+// 定义一个函数，传入一个爱心对象，返回鼠标是否点击了它
+boolean isClicked(Love love) {
+  // 计算爱心的边界，增加一些偏移量
+  float offset = 10; // 你可以根据需要调整这个值
+  float left = love.x - love.size * 3.5 - offset;
+  float right = love.x + love.size * 3.5 + offset;
+  float top = love.y - love.size - offset;
+  float bottom = love.y + love.size * 5 + offset;
+  // 判断鼠标的位置是否在爱心的边界内
+  if (mouseX > left && mouseX < right && mouseY > top && mouseY < bottom) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void mouseClicked() {
+  // 获取鼠标的位置，转换为相对于窗口中心的坐标
+  float x = mouseX - width / 2;
+  float y = mouseY - height / 2;
+  // 随机生成爱心的其他属性
+  float z = random(-500, 500);
+  color c = color(random(255), random(255), random(255));
+  float size = random(5, 20);
+  float angle = random(360);
+  float speed = random(0.5, 2);
+  int level = int(random(1, 4));
+  float ratio = random(0.2, 0.5);
+  // 创建一个新的爱心对象，添加到爱心数组的末尾
+  Love newLove = new Love(x, y, z, c, size, angle, speed, level, ratio);
+  loves = (Love[]) append(loves, newLove);
+  // 如果爱心数组的长度超过了爱心数量的限制，就删除第一个爱心对象
+  if (loves.length > loveNum) {
+    loves = (Love[]) subset(loves, 1);
+  }
+}
