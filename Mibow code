@@ -1,0 +1,204 @@
+ArrayList<Kitty> kitties;
+PVector target;
+int kittySpawnTime = 5000;
+int lastSpawnTime;
+float minSpeed = 2;
+float maxSpeed = 5;
+float initialRadius = 20;
+boolean gameOver = false;
+int startTime;
+int elapsedTime;
+
+int buttonWidth = 100;
+int buttonHeight = 50;
+int buttonX, buttonY;
+
+PImage catImage;
+boolean imageDisplayed = false;
+boolean catImageDisplayed = false; // 新增一个控制变量，避免重复显示
+boolean startGame = false; // 控制游戏是否已经开始
+
+
+class Kitty {
+  PVector position;
+  PVector velocity;
+  float speed;
+  float r; // 小猫的大小
+
+  Kitty(float speed, float radius) {
+    // 小猫随机位置生成
+    position = new PVector(random(width), random(height));
+    this.speed = speed;
+    this.r = radius; // 小猫的大小现在是一个变量
+    velocity = new PVector(0, 0);
+  }
+
+
+  void update() {
+    // 计算从小猫到目标的向量
+    PVector dir = PVector.sub(target, position);
+    dir.setMag(speed);
+    velocity.lerp(dir, 0.2); // 使运动更平滑
+    position.add(velocity);
+  }
+
+  void repel(Kitty other) {
+    PVector repelForce = PVector.sub(position, other.position);
+    float distance = repelForce.mag();
+    float minDistance = this.r + other.r; // 每只小猫的半径之和
+    if (distance < minDistance) {
+      repelForce.setMag(0.5 * (minDistance - distance)); // 排斥力基于重叠距离计算
+      position.add(repelForce); // 当前小猫移动
+      other.position.sub(repelForce); // 其他小猫相反移动
+    }
+  }
+
+  void display() {
+    // 猫的图片
+    image(catImage, position.x - r, position.y - r, r * 2, r * 2);
+  }
+  
+  boolean caughtTarget() {
+    return dist(position.x, position.y, target.x, target.y) < r;
+  }
+}
+
+void setup() {
+  size(800, 600);
+  catImage = loadImage("cat.PNG");
+  kitties = new ArrayList<Kitty>();
+  target = new PVector(mouseX, mouseY);
+  lastSpawnTime = millis();
+  startTime = millis(); // 设置游戏开始的时间
+
+  // 初始化按钮位置
+  buttonX = (width - buttonWidth) / 2;
+  buttonY = (height - buttonHeight) / 2;
+}
+
+void draw() {
+  background(255); // 设置背景颜色为白色
+
+  if (!startGame) {
+    // 游戏尚未开始，显示开始按钮
+    fill(155, 255, 155); // 设置按钮颜色淡绿色
+    rect(buttonX, buttonY, buttonWidth, buttonHeight);
+    fill(255);
+    textSize(20);
+    text("START", buttonX + buttonWidth / 4, buttonY + buttonHeight / 1.5);
+  } else {
+  
+  // 更新目标位置
+  target.x = mouseX;
+  target.y = mouseY;
+
+  // 画激光笔的拖尾
+  stroke(255, 0, 0, 100);
+  strokeWeight(8);
+  line(pmouseX, pmouseY, mouseX, mouseY);
+
+  // 检查是否增加新小猫
+  if (millis() - lastSpawnTime > kittySpawnTime) {
+    kitties.add(new Kitty(random(minSpeed, maxSpeed), initialRadius)); // 使用带半径的构造函数
+    lastSpawnTime = millis();
+    // 加快小猫速度
+    minSpeed *= 1.1;
+    maxSpeed *= 1.1;
+  }
+
+  // 更新和画所有小猫
+  for (int i = 0; i < kitties.size(); i++) {
+    Kitty k = kitties.get(i);
+    for (int j = i + 1; j < kitties.size(); j++) { // 优化排斥检查
+      k.repel(kitties.get(j));
+      kitties.get(j).repel(k); // 对称地施加排斥力
+    }
+    k.update();
+    k.display();
+
+    // 如果小猫追到了激光笔
+    if (k.caughtTarget()) {
+      gameOver = true;
+      elapsedTime = (millis() - startTime) / 1000; // 计算从开始到现在的秒数
+      break;
+    }
+  }
+
+  // 如果游戏结束，显示结果并停止绘制
+ if (gameOver) {
+      // 游戏结束，显示猫猫图像和文字
+   background(255);
+    displaycatImage();
+    // 绘制按钮
+    fill(200);
+    rect(buttonX, buttonY+80, buttonWidth, buttonHeight);
+    noLoop(); // 停止 draw 循环
+     // 设置按钮文本
+    fill(0);
+    textSize(18);
+    text("PEPLAY", buttonX+50 , buttonY + buttonHeight+60);
+    
+    color tenderGreen = color(152, 251, 152); // 定义嫩绿色
+    color tenderPink = color(255, 182, 193);  // 定义嫩粉色
+    
+    // 调用displayGameOverText函数以嫩绿色显示 "Kitten Wins!"
+    displayGameOverText("Kitten Wins!", height / 2, tenderPink);
+    // 调用displayGameOverText函数以嫩粉色显示时间文本
+    displayGameOverText("The kitten captured you in " + elapsedTime + " seconds", height / 2 + 30, tenderGreen);
+    
+  }
+}
+}
+// 修改 displayGameOverText 函数来接受一个颜色参数
+void displayGameOverText(String text, int y, color textColor) {
+  textSize(32);
+  fill(textColor);
+  float textW = textWidth(text);
+  text(text, (width /2), y);
+}
+
+
+void mousePressed() {
+  if (gameOver && mouseX > buttonX && mouseX < buttonX + buttonWidth &&
+      mouseY > buttonY+80 && mouseY < buttonY + buttonHeight+80) {
+    // 如果游戏结束且点击在重播按钮上
+    restartGame();
+  } else if (!startGame && mouseX > buttonX && mouseX < buttonX + buttonWidth &&
+             mouseY > buttonY && mouseY < buttonY + buttonHeight) {
+    // 如果游戏尚未开始且点击在开始按钮上
+    startGame = true; // 开始游戏
+    startTime = millis(); // 重置游戏开始时间
+  }
+}
+
+void displaycatImage() {
+    image(catImage,width/2 - catImage.width/2, height/2 - catImage.height/2-100);
+  
+    // 显示第一行文本
+    fill(0);
+    textSize(16);
+    textAlign(CENTER);
+    text("Flame burning, flame shining, all my kitty, meow meow meow meow!", width/2, height*3/4);
+  
+    // 显示第二行文本
+    text("sheng huo zhao zhao, sheng huo yao yao, fan wo di zi, miao miao miao miao!", width/2, height*3/4 + 20);
+  }
+
+
+void restartGame() {
+  kitties.clear(); // 清除所有小猫
+  kitties.add(new Kitty(random(minSpeed, maxSpeed), initialRadius)); // 添加初始小猫
+  gameOver = false;
+  minSpeed = 2; // 重置速度
+  maxSpeed = 5;
+  // 重置时间
+  lastSpawnTime = millis();
+  startTime = millis();
+  elapsedTime = 0;
+  catImageDisplayed = false; // 重置此标记，以便在游戏下次结束时再次显示猫咪图片
+  startGame = true; // 在这里应该将游戏设置为开始
+  loop(); // 重新开始绘制循环
+}
+void someFunction() {
+    gameOver = false; // 设置全局变量
+} 
